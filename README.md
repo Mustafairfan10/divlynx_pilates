@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Divlynx Pilates — Studio Manager
 
-## Getting Started
+A local-first Pilates studio management app built with Next.js 16, React 19, Tailwind v4 and Dexie (IndexedDB).
+All data lives on the device, so every feature works offline. It installs as a PWA.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # development (service worker disabled)
+npm run build && npm start   # production — enables offline app shell + install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+On first launch the app seeds a realistic demo studio. Use **Settings → Data** to reset the demo, erase everything, or back up and restore (JSON).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Dashboard**: today's classes, attendance, revenue trend, occupancy, renewals/low credits/waivers/equipment alerts, birthdays, activity feed
+- **Schedule**: week/day/list calendar, filters, click-to-create, recurring series, edit/cancel/restore sessions
+- **Session roster**: book members, waitlist with auto-promotion, check-in / no-show / late-cancel rules, drop-ins, spot numbers, health-note flags
+- **Check-in desk**: today's classes, quick search, walk-ins, one-tap check-in
+- **Members**: search, filters (renewing, no plan, leads…), profile with memberships, credits, freeze/unfreeze, booking history, payments, health and waiver info, CSV export
+- **Plans & pricing**: class packs, unlimited, intro offers, private packages
+- **Payments**: sell memberships, retail/drop-in/fees, pending invoices, refunds, printable invoices, CSV export
+- **Instructors**: profiles, specialties, monthly payroll (group and private rates)
+- **Classes & rooms**: class types (level, duration, capacity, credit cost, color), room capacities
+- **Equipment**: service intervals, maintenance status, overdue alerts
+- **Reports**: revenue by type, attendance trend, peak-time heatmap, class/plan/lead-source mix, retention, instructor performance
+- **Settings**: studio profile, cancellation and no-show policies, currency/locale/tax, hours, theme, storage status
+- Command palette (Ctrl/⌘ K), light/dark/system theme, responsive mobile layout with a bottom nav
 
-## Learn More
+## Offline
 
-To learn more about Next.js, take a look at the following resources:
+- `public/sw.js` precaches every route and its JS/CSS/font assets on install. Navigations fall back to the cache.
+- Data is stored in IndexedDB (`src/lib/db.ts`), and persistent storage is requested.
+- Because data is per-device, download backups regularly from Settings.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Code map
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/lib/`: types, Dexie schema, business logic (`logic.ts`: booking, credits, waitlist, sales), demo seed
+- `src/components/`: UI kit, overlays (modal/sheet/toast/confirm), app shell, charts, domain components (session sheet, member sheet, sell modal…)
+- `src/app/*/page.tsx`: one route per area
