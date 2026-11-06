@@ -193,3 +193,86 @@ body {
   .print-area { position: absolute; inset: 0; padding: 24px; background: white; color: black; }
   .no-print { display: none !important; }
 }
+
+/* ═══════════════════════ Public site ═══════════════════════ */
+.site {
+  color-scheme: light;
+  --bg: #f3ede3;
+  --bg-elev: #ebe3d6;
+  --surface: #fffcf7;
+  --surface-2: #f8f3eb;
+  --line: #e2d8c8;
+  --line-strong: #cfc2ad;
+  --ink: #1b221e;
+  --ink-2: #3d4640;
+  --muted: #6e7069;
+  --faint: #a19c90;
+  --accent: #2e4a3e;
+  --accent-ink: #f6f1e7;
+  --accent-soft: #dfe8e0;
+  --accent-strong: #1f342b;
+  --clay: #c0663f;
+  --clay-soft: #f5e1d5;
+  --sand: #e4d6c1;
+  --forest: #1d2f27;
+  --forest-2: #2a4136;
+  --moss: #8fae94;
+  --cream: #f3ede3;
+  background: var(--bg);
+  color: var(--ink);
+}
+.site ::selection { background: #c0663f; color: #fff; }
+
+.grain::after {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  opacity: .14; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.text-outline { color: transparent; -webkit-text-stroke: 1px currentColor; }
+.text-outline-cream { color: transparent; -webkit-text-stroke: 1px rgb(243 237 227 / .35); }
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes marquee-rev { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes breathe {
+  0%, 100% { transform: scale(.72); opacity: .55; }
+  45%, 55% { transform: scale(1); opacity: 1; }
+}
+@keyframes breathe-in-label { 0%, 45% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes breathe-out-label { 0%, 45% { opacity: 0; } 50%, 95% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes spring-flow { to { stroke-dashoffset: -400; } }
+@keyframes float-y { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-12px) rotate(var(--r, 0deg)); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes letter-rise { from { transform: translateY(110%) rotate(6deg); opacity: 0; } to { transform: translateY(0) rotate(0); opacity: 1; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes scroll-cue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(200%); } }
+@keyframes check-pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes ripple { from { transform: scale(.8); opacity: .7; } to { transform: scale(2.4); opacity: 0; } }
+
+.animate-marquee { animation: marquee var(--dur, 40s) linear infinite; }
+.animate-marquee-rev { animation: marquee-rev var(--dur, 46s) linear infinite; }
+.animate-breathe { animation: breathe 8s ease-in-out infinite; }
+.animate-float { animation: float-y 6s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 60s linear infinite; }
+.pause-on-hover:hover .animate-marquee, .pause-on-hover:hover .animate-marquee-rev { animation-play-state: paused; }
+
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0ms); }
+.reveal.in { opacity: 1; transform: none; }
+.reveal-scale { opacity: 0; transform: scale(.94); transition: opacity 1s cubic-bezier(.2,.7,.2,1), transform 1.2s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0ms); }
+.reveal-scale.in { opacity: 1; transform: none; }
+.draw-path { stroke-dasharray: var(--len, 1200); stroke-dashoffset: var(--len, 1200); }
+.in .draw-path, .draw-path.in { animation: draw 2.6s cubic-bezier(.6,.1,.2,1) forwards; animation-delay: var(--d, 0ms); }
+
+@media (prefers-reduced-motion: reduce) {
+  .site *, .site *::before, .site *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .reveal, .reveal-scale { opacity: 1; transform: none; }
+  .draw-path { stroke-dashoffset: 0; }
+}
+
+@theme inline {
+  --color-forest: var(--forest);
+  --color-forest-2: var(--forest-2);
+  --color-moss: var(--moss);
+  --color-cream: var(--cream);
+}

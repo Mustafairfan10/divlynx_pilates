@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
-import { AppShell } from "@/components/shell";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -8,8 +7,8 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["SOFT", "WONK", "opsz"] });
 
 export const metadata: Metadata = {
-  title: { default: "Divlynx Pilates · Studio Manager", template: "%s · Divlynx Pilates" },
-  description: "Run your Pilates studio — schedule, members, memberships, check-in, payments and reports. Works offline.",
+  title: { default: "Divlynx Pilates · Reformer & Mat Studio", template: "%s · Divlynx Pilates" },
+  description: "Reformer, mat and tower Pilates in small classes. Book your first session, browse memberships and shop the studio.",
   applicationName: "Divlynx Pilates",
   appleWebApp: { capable: true, title: "Divlynx", statusBarStyle: "default" },
   icons: { icon: "/icon.svg", apple: "/icon-192.png" },
@@ -25,7 +24,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
+const themeScript = `(function(){try{if(location.pathname.indexOf('/admin')!==0)return;var t=localStorage.getItem('theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -34,7 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full">
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );

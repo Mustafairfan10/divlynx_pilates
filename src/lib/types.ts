@@ -49,6 +49,40 @@ export interface Member {
   goals?: string;
   notes?: string;
   waiverSigned: boolean;
+  intake?: Intake;
+}
+
+export type Experience = "new" | "some" | "regular" | "instructor";
+export interface Intake {
+  submittedAt: string;
+  experience: Experience;
+  activityLevel: "low" | "moderate" | "high";
+  goals: string[];
+  interests: ClassCategory[];
+  preferredTimes: string[];
+  injuries: string[];
+  conditions: string[];
+  medications?: string;
+  bodyNotes?: string;
+  occupation?: string;
+  signatureName: string;
+  signatureImage?: string;
+  marketingOptIn: boolean;
+  needsClearance: boolean;
+}
+
+export type ProductArt = "socks" | "bottle" | "tote" | "band" | "towel" | "mat" | "ring" | "giftcard";
+export interface Product {
+  id: ID;
+  name: string;
+  category: "apparel" | "equipment" | "accessories" | "gift";
+  price: number;
+  description: string;
+  stock: number;
+  art: ProductArt;
+  tone: string;
+  active: boolean;
+  badge?: string;
 }
 
 export interface Instructor {

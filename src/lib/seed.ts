@@ -1,6 +1,7 @@
 import { addDays, startOfWeek, subDays } from "date-fns";
 import { ALL_TABLES, db } from "./db";
 import { DEFAULT_SETTINGS } from "./logic";
+import { demoProducts } from "./products";
 import type {
   Activity, Booking, ClassType, Equipment, Instructor, Member, Membership, Payment, Plan, Room, Session,
 } from "./types";
@@ -277,6 +278,25 @@ export async function seedDemo() {
     const mById = new Map(members.map((m) => [m.id, m]));
     recent.forEach((b) => acts.push({ id: uid(), at: b.checkedInAt!, kind: "checkin", message: `${mById.get(b.memberId)?.firstName} ${mById.get(b.memberId)?.lastName} checked in`, refId: b.id }));
     payments.slice(-5).forEach((p) => acts.push({ id: uid(), at: p.date, kind: "payment", message: `${p.description} — ${mById.get(p.memberId ?? "")?.firstName ?? "Walk-in"}`, refId: p.id }));
+    await db.products.bulkAdd(demoProducts());
+
+    // A few leads arrived through the website intake form
+    const leads = members.filter((m) => m.status === "lead").slice(0, 4);
+    for (const [i, m] of leads.entries()) {
+      const at = subDays(now, i * 2 + 0.3).toISOString();
+      await db.members.update(m.id, {
+        joinedAt: at, source: "Website", waiverSigned: true, tags: [...m.tags, "Web intake"],
+        intake: {
+          submittedAt: at, experience: (["new", "some", "new", "regular"] as const)[i], activityLevel: (["low", "moderate", "moderate", "high"] as const)[i],
+          goals: [["Posture", "Stress relief"], ["Core strength", "Flexibility"], ["Rehab after injury"], ["Tone & sculpt", "Athletic performance"]][i],
+          interests: ([["mat", "reformer"], ["reformer"], ["private", "reformer"], ["reformer", "tower"]] as const)[i].slice(),
+          preferredTimes: [["Early (6–8am)"], ["Evening (5–8pm)"], ["Midday (11am–2pm)"], ["Early (6–8am)", "Weekend"]][i],
+          injuries: [[], ["Lower back"], ["Knees"], ["Shoulders"]][i], conditions: i === 2 ? ["Recent surgery (last 6 months)"] : [],
+          signatureName: `${m.firstName} ${m.lastName}`, marketingOptIn: i % 2 === 0, needsClearance: i === 2,
+        },
+      });
+      acts.push({ id: uid(), at, kind: "member", message: `New intake form: ${m.firstName} ${m.lastName}`, refId: m.id });
+    }
     await db.activity.bulkAdd(acts);
   });
 }

@@ -6,12 +6,13 @@
  *   page load, which this worker then serves from cache.
  * All studio data lives in IndexedDB on the device, so every feature works offline.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const PAGES = `pages-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
 const ROUTES = [
-  "/", "/schedule", "/check-in", "/members", "/instructors", "/plans", "/payments",
-  "/reports", "/classes", "/equipment", "/settings",
+  "/", "/shop", "/join",
+  "/admin", "/admin/schedule", "/admin/check-in", "/admin/members", "/admin/instructors", "/admin/plans",
+  "/admin/payments", "/admin/reports", "/admin/classes", "/admin/equipment", "/admin/settings",
 ];
 const EXTRA = ["/manifest.webmanifest", "/icon.svg", "/icon-192.png", "/icon-512.png"];
 

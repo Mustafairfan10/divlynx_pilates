@@ -121,35 +121,35 @@ export function Logo({ size = 36 }: { size?: number }) {
 const NAV = [
   {
     group: "Studio", items: [
-      { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/schedule", label: "Schedule", icon: CalendarDays },
-      { href: "/check-in", label: "Check-in", icon: UserCheck },
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
+      { href: "/admin/check-in", label: "Check-in", icon: UserCheck },
     ],
   },
   {
     group: "People", items: [
-      { href: "/members", label: "Members", icon: Users },
-      { href: "/instructors", label: "Instructors", icon: GraduationCap },
+      { href: "/admin/members", label: "Members", icon: Users },
+      { href: "/admin/instructors", label: "Instructors", icon: GraduationCap },
     ],
   },
   {
     group: "Business", items: [
-      { href: "/plans", label: "Plans & Pricing", icon: Ticket },
-      { href: "/payments", label: "Payments", icon: Wallet },
-      { href: "/reports", label: "Reports", icon: ChartColumn },
+      { href: "/admin/plans", label: "Plans & Pricing", icon: Ticket },
+      { href: "/admin/payments", label: "Payments", icon: Wallet },
+      { href: "/admin/reports", label: "Reports", icon: ChartColumn },
     ],
   },
   {
     group: "Operations", items: [
-      { href: "/classes", label: "Classes & Rooms", icon: Layers },
-      { href: "/equipment", label: "Equipment", icon: Wrench },
-      { href: "/settings", label: "Settings", icon: Settings },
+      { href: "/admin/classes", label: "Classes & Rooms", icon: Layers },
+      { href: "/admin/equipment", label: "Equipment", icon: Wrench },
+      { href: "/admin/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
 const ALL_NAV = NAV.flatMap((g) => g.items);
 
-const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+const isActive = (path: string, href: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
 
 function Sidebar({ collapsed, setCollapsed, openPalette }: { collapsed: boolean; setCollapsed: (v: boolean) => void; openPalette: () => void }) {
   const path = usePathname();
@@ -333,16 +333,16 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
   const items = useMemo(() => {
     const s = q.trim().toLowerCase();
     const actions = [
-      { id: "a-member", label: "Add new member", hint: "Action", icon: UserPlus, href: "/members?new=1" },
-      { id: "a-session", label: "Schedule a class", hint: "Action", icon: CalendarPlus, href: "/schedule?new=1" },
-      { id: "a-sell", label: "Sell a membership", hint: "Action", icon: CreditCard, href: "/payments?sell=1" },
-      { id: "a-checkin", label: "Open check-in desk", hint: "Action", icon: UserCheck, href: "/check-in" },
+      { id: "a-member", label: "Add new member", hint: "Action", icon: UserPlus, href: "/admin/members?new=1" },
+      { id: "a-session", label: "Schedule a class", hint: "Action", icon: CalendarPlus, href: "/admin/schedule?new=1" },
+      { id: "a-sell", label: "Sell a membership", hint: "Action", icon: CreditCard, href: "/admin/payments?sell=1" },
+      { id: "a-checkin", label: "Open check-in desk", hint: "Action", icon: UserCheck, href: "/admin/check-in" },
     ];
     const pages = ALL_NAV.map((n) => ({ id: n.href, label: n.label, hint: "Page", icon: n.icon, href: n.href }));
     const ms = members
       .filter((m) => !s || fullName(m).toLowerCase().includes(s) || m.email.toLowerCase().includes(s) || m.phone.includes(s))
       .slice(0, s ? 8 : 4)
-      .map((m) => ({ id: m.id, label: fullName(m), hint: m.email, icon: null as null | typeof Users, href: `/members?id=${m.id}`, member: m }));
+      .map((m) => ({ id: m.id, label: fullName(m), hint: m.email, icon: null as null | typeof Users, href: `/admin/members?id=${m.id}`, member: m }));
     const f = <T extends { label: string }>(a: T[]) => (s ? a.filter((x) => x.label.toLowerCase().includes(s)) : a);
     return [...f(actions), ...ms, ...f(pages)];
   }, [q, members]);
@@ -402,6 +402,22 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
       </div>
     </div>
+  );
+}
+
+/* ───────── Public site providers (no admin chrome) ───────── */
+export function SiteProviders({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    document.documentElement.classList.remove("dark");
+    document.body.classList.add("site");
+    return () => document.body.classList.remove("site");
+  }, []);
+  return (
+    <PwaProvider>
+      <OverlayProvider>
+        <DataGate>{children}</DataGate>
+      </OverlayProvider>
+    </PwaProvider>
   );
 }
 

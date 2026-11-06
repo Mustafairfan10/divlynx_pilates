@@ -1,7 +1,8 @@
 import Dexie, { type EntityTable } from "dexie";
 import type {
-  Activity, Booking, ClassType, Equipment, Instructor, Member, Membership, Payment, Plan, Room, Session, Settings,
+  Activity, Booking, ClassType, Equipment, Instructor, Member, Membership, Payment, Plan, Product, Room, Session, Settings,
 } from "./types";
+import { demoProducts } from "./products";
 
 export class StudioDB extends Dexie {
   settings!: EntityTable<Settings, "id">;
@@ -16,6 +17,7 @@ export class StudioDB extends Dexie {
   payments!: EntityTable<Payment, "id">;
   equipment!: EntityTable<Equipment, "id">;
   activity!: EntityTable<Activity, "id">;
+  products!: EntityTable<Product, "id">;
 
   constructor() {
     super("pilates-studio");
@@ -33,6 +35,7 @@ export class StudioDB extends Dexie {
       equipment: "id, roomId, status",
       activity: "id, at",
     });
+    this.version(2).stores({ products: "id, category" }).upgrade((tx) => tx.table("products").bulkAdd(demoProducts()));
   }
 }
 
@@ -40,5 +43,5 @@ export const db = new StudioDB();
 
 export const ALL_TABLES = [
   "settings", "members", "instructors", "classTypes", "rooms", "sessions",
-  "bookings", "plans", "memberships", "payments", "equipment", "activity",
+  "bookings", "plans", "memberships", "payments", "equipment", "activity", "products",
 ] as const;

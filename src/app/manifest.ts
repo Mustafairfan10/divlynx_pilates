@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Divlynx Pilates · Studio Manager",
     short_name: "Divlynx",
     description: "Pilates studio management — works fully offline.",
-    start_url: "/",
+    start_url: "/admin",
     scope: "/",
     display: "standalone",
     orientation: "any",
@@ -19,9 +19,9 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
-      { name: "Check-in desk", url: "/check-in" },
-      { name: "Schedule", url: "/schedule" },
-      { name: "Members", url: "/members" },
+      { name: "Check-in desk", url: "/admin/check-in" },
+      { name: "Schedule", url: "/admin/schedule" },
+      { name: "Members", url: "/admin/members" },
     ],
   };
 }

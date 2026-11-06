@@ -14,6 +14,7 @@ import { Avatar, Badge, Button, Meter, Segmented } from "../ui";
 import { MemberForm } from "./member-form";
 import { SellModal } from "./sell-modal";
 import { BOOKING_BADGE, MEMBER_STATUS } from "./constants";
+import { IntakeCard } from "./intake-card";
 
 const MS_STATE: Record<string, { label: string; tone: "good" | "info" | "neutral" | "warn" | "bad" }> = {
   active: { label: "Active", tone: "good" }, expired: { label: "Expired", tone: "neutral" }, frozen: { label: "Frozen", tone: "info" },
@@ -108,6 +109,7 @@ export function MemberSheet({ memberId, onClose }: { memberId: string | null; on
                     <div><div className="text-sm font-semibold text-ink">Health notes</div><div className="mt-0.5 text-sm text-ink-2">{member.healthNotes}</div></div>
                   </div>
                 )}
+                {member.intake && <IntakeCard intake={member.intake} />}
                 {!member.waiverSigned && (
                   <div className="flex items-center gap-3 rounded-2xl border border-warn/25 bg-warn-soft/60 p-4 text-sm">
                     <TriangleExclamationPoint className="size-5 text-warn" />

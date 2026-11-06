@@ -5,7 +5,7 @@ import {
 } from "date-fns";
 import {
   ArrowRight, ArrowUpRight, CalendarPlus, Cake, CircleCheck, Clock, CreditCard, HeartPulse, Receipt, ShieldCheck, Sparkles,
-  TrendingUp, UserCheck, UserPlus, Users, Wrench, CalendarDays, Hourglass,
+  TrendingUp, UserCheck, UserPlus, Users, Wrench, CalendarDays, Hourglass, ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -95,7 +95,11 @@ export default function Dashboard() {
   const greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const trend = data && data.revLastSame > 0 ? ((data.revMonth - data.revLastSame) / data.revLastSame) * 100 : undefined;
 
+  const fresh = addDays(now, -14).toISOString();
+  const intakes = lk.members.filter((m) => m.intake && m.intake.submittedAt >= fresh && m.status === "lead")
+    .sort((a, b) => b.intake!.submittedAt.localeCompare(a.intake!.submittedAt));
   const attention = data ? [
+    ...intakes.slice(0, 4).map((m) => ({ key: "i" + m.id, icon: <ClipboardList />, tone: (m.intake!.needsClearance ? "bad" : "info") as "bad" | "info", title: fullName(m), desc: `New intake form${m.intake!.needsClearance ? " · clearance needed" : ""} · book their intro`, member: m.id as string | undefined })),
     ...data.expiring.slice(0, 4).map((m) => ({ key: m.id, icon: <Hourglass />, tone: "warn" as const, title: fullName(lk.member.get(m.memberId)), desc: `${m.planName} expires ${format(new Date(m.endDate), "EEE MMM d")}`, member: m.memberId })),
     ...data.lowCredit.slice(0, 4).map((m) => ({ key: "c" + m.id, icon: <CreditCard />, tone: "clay" as const, title: fullName(lk.member.get(m.memberId)), desc: `${creditsLeft(m)} credit left on ${m.planName}`, member: m.memberId })),
     ...unsigned.slice(0, 3).map((m) => ({ key: "w" + m.id, icon: <ShieldCheck />, tone: "info" as const, title: fullName(m), desc: "Waiver not signed", member: m.id })),
@@ -116,9 +120,9 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/members?new=1"><Button><UserPlus /> New member</Button></Link>
-          <Link href="/schedule?new=1"><Button><CalendarPlus /> Schedule class</Button></Link>
-          <Link href="/check-in"><Button variant="primary"><UserCheck /> Check-in desk</Button></Link>
+          <Link href="/admin/members?new=1"><Button><UserPlus /> New member</Button></Link>
+          <Link href="/admin/schedule?new=1"><Button><CalendarPlus /> Schedule class</Button></Link>
+          <Link href="/admin/check-in"><Button variant="primary"><UserCheck /> Check-in desk</Button></Link>
         </div>
       </div>
 
@@ -135,7 +139,7 @@ export default function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Weekly revenue" subtitle="Last 12 weeks, all payment types" action={<Link href="/reports" className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">Reports <ArrowUpRight className="size-3.5" /></Link>} />
+          <CardHeader title="Weekly revenue" subtitle="Last 12 weeks, all payment types" action={<Link href="/admin/reports" className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:underline">Reports <ArrowUpRight className="size-3.5" /></Link>} />
           <div className="h-[260px] px-2 pt-4 pb-3">
             {data ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -159,7 +163,7 @@ export default function Dashboard() {
 
         <Card className="flex flex-col">
           <CardHeader title="Today's classes" subtitle={format(now, "EEEE")} icon={<CalendarDays />}
-            action={<Link href="/schedule" className="text-[13px] font-medium text-accent hover:underline">Week</Link>} />
+            action={<Link href="/admin/schedule" className="text-[13px] font-medium text-accent hover:underline">Week</Link>} />
           <div className="mt-3 flex-1 space-y-1 overflow-y-auto px-3 pb-4 lg:max-h-[268px]">
             {data?.today.length === 0 && <div className="px-3 py-10 text-center text-sm text-muted">No classes today — enjoy the quiet.</div>}
             {data?.today.map((s) => {
