@@ -9,7 +9,7 @@ import { Badge, Button, Card, Field, Input, PageHeader, Segmented, Select, Switc
 import { db } from "@/lib/db";
 import { membershipState } from "@/lib/logic";
 import type { Plan, Product, ProductArt as ArtKind } from "@/lib/types";
-import { ProductArt } from "@/components/site/art";
+import { SupplySketch } from "@/components/site/sketch";
 import { cn, money, uid, EMPTY } from "@/lib/utils";
 
 const TYPE_LABEL: Record<Plan["type"], string> = { pack: "Class pack", unlimited: "Unlimited", intro: "Intro offer", private: "Private" };
@@ -173,7 +173,7 @@ function ProductsSection() {
           {products.map((p) => (
             <li key={p.id} className={cn("flex items-center gap-4 px-5 py-3", !p.active && "opacity-55")}>
               <div className="grid size-12 shrink-0 place-items-center rounded-xl" style={{ background: `color-mix(in srgb, ${p.tone} 20%, var(--surface-2))` }}>
-                <ProductArt art={p.art} tone={p.tone} className="size-10" />
+                <SupplySketch art={p.art} tone={p.tone} className="size-10" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 font-medium text-ink">{p.name}{!p.active && <Badge>Hidden</Badge>}{p.badge && <Badge tone="clay">{p.badge}</Badge>}</div>
@@ -219,7 +219,7 @@ function ProductForm({ open, onClose, value }: { open: boolean; onClose: () => v
       </>}>
       <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
         <div className="grid aspect-square place-items-center rounded-2xl" style={{ background: `color-mix(in srgb, ${p.tone} 20%, var(--surface-2))` }}>
-          <ProductArt art={p.art} tone={p.tone} className="size-24" />
+          <SupplySketch art={p.art} tone={p.tone} className="size-24" />
         </div>
         <div className="grid gap-4">
           <Field label="Name" required><Input value={p.name} onChange={(e) => set("name", e.target.value)} autoFocus /></Field>
@@ -239,7 +239,7 @@ function ProductForm({ open, onClose, value }: { open: boolean; onClose: () => v
           <div className="flex flex-wrap gap-2">
             {ARTS.map((a) => (
               <button key={a} onClick={() => set("art", a)} className={cn("grid size-12 place-items-center rounded-xl border", p.art === a ? "border-accent bg-accent-soft" : "border-line hover:border-line-strong")} aria-label={a}>
-                <ProductArt art={a} tone={p.tone} className="size-9" />
+                <SupplySketch art={a} tone={p.tone} className="size-9" />
               </button>
             ))}
           </div>

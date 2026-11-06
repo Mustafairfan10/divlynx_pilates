@@ -1,263 +1,41 @@
 "use client";
 import { useLiveQuery } from "dexie-react-hooks";
 import { addDays, format, isSameDay, startOfDay } from "date-fns";
-import { ArrowDown, ArrowRight, ArrowUpRight, Clock, Plus, Sparkles, Users } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { BreathingOrb, MethodArt, Springs } from "@/components/site/art";
-import { useCart } from "@/components/site/cart";
-import { Counter, Marquee, Reveal, RiseText, useInView, useSpotlight, WordReveal } from "@/components/site/motion";
-import { ReserveModal } from "@/components/site/reserve";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, type FormEvent } from "react";
+import { Mark, MarkerText } from "@/components/kokonutui/marker-text";
 import { useToast } from "@/components/overlay";
+import SquigglyArrow from "@/components/registry/squiggle-arrow";
+import { useCart } from "@/components/site/cart";
+import {
+  CapacityBoxes, CheckBox, FormHeading, Hand, HiliteButton, HiliteLink, Label, LineInput, MarginArrow, PenButton, PenLink, Stamp,
+} from "@/components/site/paper";
+import { ReserveModal } from "@/components/site/reserve";
+import { ExerciseFigure } from "@/components/site/sketch";
+import { AccordionApp } from "@/components/watermelon/card-split-accordian";
 import { db } from "@/lib/db";
 import { useLookups, useNow, useSettings } from "@/lib/hooks";
-import type { Session } from "@/lib/types";
+import type { ClassType, Session } from "@/lib/types";
 import { CATEGORY_LABEL, EMPTY, EMPTY_MAP, LEVEL_LABEL, cn, money } from "@/lib/utils";
 
-const TESTIMONIALS = [
-  { q: "Six weeks in and my back pain is basically gone. The instructors notice everything.", n: "Rania, member since spring" },
-  { q: "Small classes, real corrections. It feels like a private session every time.", n: "Daniel, reformer regular" },
-  { q: "I came for core strength and stayed for the calm. Best hour of my week.", n: "Mila, Tuesday 7am crew" },
-  { q: "Post-natal recovery done properly. They adapted every exercise for me.", n: "Sara, new mum" },
-  { q: "As a runner I finally understand what 'engage your core' means.", n: "Omar, marathoner" },
-  { q: "The studio is beautiful, quiet and spotless. I never want to leave.", n: "Grace, mat classes" },
-];
-
+/* Beginner-first order: the sequence a new client is actually walked through. */
 const ORDER = ["reformer", "mat", "tower", "barre", "chair", "private", "other"];
 const LEVELS = ["beginner", "all", "intermediate", "advanced"];
-function sortTypes<T extends { category: string; level: string; name: string }>(list: T[]) {
-  return [...list].sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || a.name.localeCompare(b.name));
-}
+const sortTypes = (list: ClassType[]) =>
+  [...list].sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level) || ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || a.name.localeCompare(b.name));
 
-export default function Landing() {
-  return (
-    <>
-      <Hero />
-      <Manifesto />
-      <Methods />
-      <Numbers />
-      <Team />
-      <Timetable />
-      <Pricing />
-      <Voices />
-      <FirstVisit />
-    </>
-  );
-}
+const NOTE: Record<string, string> = {
+  beginner: "start here",
+  all: "any time",
+  intermediate: "after ~5 classes",
+  advanced: "when you feel ready",
+};
 
-/* ───────────────────────── Hero ───────────────────────── */
-function Hero() {
-  const spot = useSpotlight<HTMLElement>();
-  const lk = useLookups();
-  const settings = useSettings();
-  const names = sortTypes(lk.classTypes.filter((c) => c.active)).map((c) => c.name);
-  return (
-    <section
-      ref={spot}
-      className="relative flex min-h-[100svh] flex-col overflow-hidden bg-forest text-cream grain"
-      style={{ backgroundImage: "radial-gradient(520px circle at var(--mx, 72%) var(--my, 42%), rgb(143 174 148 / .20), transparent 65%), radial-gradient(900px circle at 85% 110%, rgb(192 102 63 / .22), transparent 60%), radial-gradient(700px circle at -10% -10%, rgb(143 174 148 / .14), transparent 60%)" }}
-    >
-      <Springs className="absolute inset-0 h-full w-full opacity-70" />
-      <div className="relative z-10 mx-auto grid w-full max-w-[1320px] flex-1 items-center gap-10 px-5 pt-32 pb-10 md:px-10 lg:grid-cols-[1.25fr_1fr]">
-        <div>
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-cream/15 bg-cream/5 px-4 py-1.5 text-[13px] text-cream/75 backdrop-blur" style={{ animation: "fade-in 1s both .1s" }}>
-            <span className="size-1.5 animate-pulse rounded-full bg-moss" /> Reformer · Mat · Tower · Barre
-          </div>
-          <h1 className="font-display text-[clamp(3.4rem,9.5vw,8.6rem)] font-light leading-[0.9] tracking-[-0.03em]">
-            <span className="block"><RiseText text="Strength," delay={150} /></span>
-            <span className="block"><RiseText text="found" delay={420} /> <em className="font-normal text-moss"><RiseText text="slowly." delay={620} /></em></span>
-          </h1>
-          <p className="mt-8 max-w-md text-[17px] leading-relaxed text-cream/70" style={{ animation: "fade-in 1.2s both 1.1s" }}>
-            Small-group Pilates where every rep is intentional. Ten reformers, expert hands-on teaching and a room built for breathing out.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-3" style={{ animation: "fade-in 1.2s both 1.3s" }}>
-            <Link href="/join" className="group inline-flex h-14 items-center gap-3 rounded-full bg-cream pl-7 pr-2 text-[15px] font-medium text-forest transition hover:bg-white">
-              Book your first class
-              <span className="grid size-10 place-items-center rounded-full bg-forest text-cream transition-transform duration-500 group-hover:rotate-45"><ArrowUpRight className="size-4" /></span>
-            </Link>
-            <a href="#timetable" className="inline-flex h-14 items-center gap-2 rounded-full border border-cream/20 px-6 text-[15px] font-medium text-cream/85 transition hover:border-cream/50 hover:text-cream">
-              This week&apos;s classes
-            </a>
-          </div>
-        </div>
-        <div className="relative mx-auto w-full max-w-[520px]" style={{ animation: "fade-in 2s both .4s" }}>
-          <svg viewBox="0 0 400 400" className="absolute inset-0 h-full w-full animate-spin-slow text-cream/40" aria-hidden>
-            <defs><path id="ring" d="M200,200 m-182,0 a182,182 0 1,1 364,0 a182,182 0 1,1 -364,0" /></defs>
-            <text fontSize="13" letterSpacing="6" fill="currentColor" style={{ textTransform: "uppercase" }}>
-              <textPath href="#ring">breathe · centre · control · flow · precision · breathe · centre · control · flow · precision ·</textPath>
-            </text>
-          </svg>
-          <BreathingOrb className="m-[11%]" />
-        </div>
-      </div>
-      <div className="relative z-10 border-t border-cream/10 py-6">
-        <Marquee duration={50}>
-          {(names.length ? names : ["Reformer", "Mat", "Tower", "Barre"]).map((n) => (
-            <span key={n} className="flex items-center gap-10 px-5 font-display text-4xl italic text-cream/35 md:text-5xl">
-              {n}<span className="not-italic text-clay">✳</span>
-            </span>
-          ))}
-        </Marquee>
-      </div>
-      <a href="#philosophy" className="absolute bottom-28 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-cream/50 md:flex">
-        Scroll
-        <span className="relative h-10 w-px overflow-hidden bg-cream/20"><span className="absolute inset-x-0 h-1/2 bg-cream" style={{ animation: "scroll-cue 2s ease-in-out infinite" }} /></span>
-      </a>
-      <span className="sr-only">{settings.studioName}</span>
-    </section>
-  );
-}
-
-/* ───────────────────────── Manifesto ───────────────────────── */
-function Manifesto() {
-  return (
-    <section id="philosophy" className="relative mx-auto max-w-[1320px] px-5 py-32 md:px-10 md:py-48">
-      <Reveal className="mb-10 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted"><span className="h-px w-10 bg-line-strong" /> Our philosophy</Reveal>
-      <WordReveal
-        className="max-w-5xl font-display text-[clamp(2rem,4.6vw,4.2rem)] font-light leading-[1.12] tracking-[-0.02em] text-ink"
-        highlight={["less,", "breath", "calmer"]}
-        text="Pilates isn't about doing more. It's about doing less, better — with control, breath and intention. Our classes are small, our teachers are obsessive about form, and every session leaves you longer, stronger and calmer than you arrived."
-      />
-    </section>
-  );
-}
-
-/* ───────────────────────── Methods (sticky stack) ───────────────────────── */
-function Methods() {
-  const lk = useLookups();
-  const types = sortTypes(lk.classTypes.filter((c) => c.active));
-  const palettes = [
-    { bg: "bg-forest", text: "text-cream", sub: "text-cream/65", chip: "border-cream/20 text-cream/80", art: "text-moss" },
-    { bg: "bg-sand", text: "text-ink", sub: "text-ink-2", chip: "border-ink/15 text-ink-2", art: "text-forest" },
-    { bg: "bg-surface", text: "text-ink", sub: "text-muted", chip: "border-line-strong text-ink-2", art: "text-clay" },
-    { bg: "bg-[#c0663f]", text: "text-cream", sub: "text-cream/75", chip: "border-cream/25 text-cream/85", art: "text-cream" },
-  ];
-  return (
-    <section id="methods" className="relative mx-auto max-w-[1320px] scroll-mt-20 px-5 pb-32 md:px-10">
-      <div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <Reveal>
-          <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted"><span className="h-px w-10 bg-line-strong" /> The methods</div>
-          <h2 className="font-display text-5xl font-light tracking-tight text-ink md:text-7xl">Find your <em className="text-clay">apparatus.</em></h2>
-        </Reveal>
-        <Reveal delay={150} className="max-w-sm text-muted">From your very first footwork series to advanced jumpboard — every format is taught in groups small enough for real corrections.</Reveal>
-      </div>
-      <div className="space-y-6">
-        {types.map((c, i) => {
-          const p = palettes[i % palettes.length];
-          return <MethodCard key={c.id} i={i} c={c} p={p} total={types.length} />;
-        })}
-      </div>
-    </section>
-  );
-}
-
-function MethodCard({ i, c, p, total }: { i: number; total: number; c: ReturnType<typeof useLookups>["classTypes"][number]; p: { bg: string; text: string; sub: string; chip: string; art: string } }) {
-  const [ref, inView] = useInView<HTMLDivElement>({ threshold: 0.3 });
-  return (
-    <div ref={ref} className="sticky" style={{ top: `${96 + i * 22}px` }}>
-      <article className={cn("relative grid min-h-[420px] overflow-hidden rounded-[2rem] p-8 shadow-[0_-12px_40px_-20px_rgb(27_34_30/.35)] md:grid-cols-[1fr_1.1fr] md:p-12", p.bg, p.text, inView && "in")}>
-        <div className="relative z-10 flex flex-col">
-          <div className={cn("font-display text-sm tnum", p.sub)}>{String(i + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}</div>
-          <h3 className="mt-6 font-display text-4xl font-light tracking-tight md:text-6xl">{c.name}</h3>
-          <p className={cn("mt-5 max-w-md text-[16px] leading-relaxed", p.sub)}>{c.description}</p>
-          <div className="mt-auto flex flex-wrap gap-2 pt-8">
-            {[CATEGORY_LABEL[c.category], LEVEL_LABEL[c.level], `${c.duration} min`, `Max ${c.defaultCapacity}`].map((t) => (
-              <span key={t} className={cn("rounded-full border px-3.5 py-1.5 text-[13px]", p.chip)}>{t}</span>
-            ))}
-          </div>
-        </div>
-        <div className={cn("relative mt-8 flex items-center justify-center md:mt-0", p.art)}>
-          <MethodArt kind={c.category} className="w-full max-w-[520px]" />
-        </div>
-      </article>
-    </div>
-  );
-}
-
-/* ───────────────────────── Numbers ───────────────────────── */
-function Numbers() {
-  const lk = useLookups();
-  const now = useNow();
-  const weekSessions = useLiveQuery(() => db.sessions.where("start").between(startOfDay(now).toISOString(), addDays(startOfDay(now), 7).toISOString()).count(), [startOfDay(now).toISOString()]) ?? 0;
-  const reformers = useLiveQuery(() => db.equipment.filter((e) => e.type === "reformer").count(), []) ?? 0;
-  const maxSize = Math.max(0, ...lk.classTypes.filter((c) => c.category === "reformer").map((c) => c.defaultCapacity));
-  const [ref, inView] = useInView<HTMLDivElement>({ threshold: 0.25 });
-  const stats = [
-    { v: weekSessions, l: "classes this week" },
-    { v: reformers, l: "reformers in the studio" },
-    { v: lk.instructors.filter((i) => i.active).length, l: "certified instructors" },
-    { v: maxSize, l: "people max per reformer class" },
-  ];
-  return (
-    <section className="relative overflow-hidden bg-forest py-28 text-cream grain md:py-36">
-      <div ref={ref} className={cn("relative z-10 mx-auto max-w-[1320px] px-5 md:px-10", inView && "in")}>
-        <div className="grid items-center gap-16 lg:grid-cols-2">
-          <div>
-            <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-cream/50"><span className="h-px w-10 bg-cream/25" /> The studio</div>
-            <h2 className="font-display text-5xl font-light leading-[1.02] tracking-tight md:text-6xl">Built for <em className="text-moss">attention,</em><br />not volume.</h2>
-            <div className="mt-14 grid grid-cols-2 gap-x-8 gap-y-10">
-              {stats.map((s) => (
-                <div key={s.l} className="border-t border-cream/15 pt-5">
-                  <Counter to={s.v} className="font-display text-6xl font-light md:text-7xl" />
-                  <div className="mt-2 text-sm text-cream/60">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="text-moss">
-            <MethodArt kind="reformer" className="w-full" />
-            <p className="mt-6 text-center text-xs uppercase tracking-[0.2em] text-cream/40">Balanced Body Allegro · spring-loaded resistance</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ───────────────────────── Team ───────────────────────── */
-function Team() {
-  const lk = useLookups();
-  return (
-    <section id="team" className="scroll-mt-20 py-28 md:py-40">
-      <div className="mx-auto mb-12 flex max-w-[1320px] flex-col justify-between gap-6 px-5 md:flex-row md:items-end md:px-10">
-        <Reveal>
-          <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted"><span className="h-px w-10 bg-line-strong" /> The teachers</div>
-          <h2 className="font-display text-5xl font-light tracking-tight text-ink md:text-7xl">Hands that <em className="text-clay">know.</em></h2>
-        </Reveal>
-        <Reveal delay={120} className="max-w-sm text-muted">Comprehensively certified, endlessly curious. Swipe to meet the people who&apos;ll be correcting your pelvis.</Reveal>
-      </div>
-      <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-6 [scrollbar-width:none]"
-        style={{ paddingInline: "max(1.25rem, calc((100vw - 1320px) / 2 + 2.5rem))", scrollPaddingInline: "max(1.25rem, calc((100vw - 1320px) / 2 + 2.5rem))" }}>
-        {lk.instructors.filter((i) => i.active).map((ins, idx) => (
-          <Reveal key={ins.id} delay={idx * 90} variant="scale" className="snap-start">
-            <article className="group relative flex h-[460px] w-[300px] shrink-0 flex-col overflow-hidden rounded-[2rem] p-7 text-cream md:w-[340px]"
-              style={{ background: `linear-gradient(160deg, color-mix(in srgb, ${ins.color} 92%, #fff) 0%, color-mix(in srgb, ${ins.color} 80%, #000) 100%)` }}>
-              <div className="pointer-events-none absolute -right-8 -top-10 select-none font-display text-[220px] italic leading-none text-cream/12 transition-transform duration-700 group-hover:-translate-x-4 group-hover:scale-105">
-                {ins.name.split(" ").map((s) => s[0]).join("")}
-              </div>
-              <div className="relative mt-auto">
-                <div className="mb-3 flex flex-wrap gap-1.5">
-                  {ins.specialties.map((s) => <span key={s} className="rounded-full bg-cream/15 px-2.5 py-1 text-[11.5px] backdrop-blur">{CATEGORY_LABEL[s]}</span>)}
-                </div>
-                <h3 className="font-display text-3xl">{ins.name}</h3>
-                <p className="mt-2 max-h-0 overflow-hidden text-sm leading-relaxed text-cream/80 opacity-0 transition-all duration-500 group-hover:max-h-40 group-hover:opacity-100 max-md:max-h-40 max-md:opacity-100">{ins.bio}</p>
-              </div>
-            </article>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ───────────────────────── Timetable ───────────────────────── */
-function Timetable() {
-  const lk = useLookups();
+/** Live sessions for the next 7 days, with booked counts. */
+function useWeek() {
   const now = useNow(60_000);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(startOfDay(now), i)), [now]);
-  const [day, setDay] = useState(0);
-  const [reserve, setReserve] = useState<Session | null>(null);
-  const from = days[0].toISOString(), to = addDays(days[6], 1).toISOString();
+  const from = startOfDay(now).toISOString();
+  const to = addDays(startOfDay(now), 8).toISOString();
   const sessions = useLiveQuery(() => db.sessions.where("start").between(from, to).toArray(), [from]) ?? EMPTY;
   const counts = useLiveQuery(async () => {
     if (!sessions.length) return new Map<string, number>();
@@ -266,150 +44,387 @@ function Timetable() {
     bs.forEach((b) => (b.status === "booked" || b.status === "checked_in") && m.set(b.sessionId, (m.get(b.sessionId) ?? 0) + 1));
     return m;
   }, [sessions]) ?? EMPTY_MAP;
-  const list = sessions.filter((s) => !s.cancelled && isSameDay(new Date(s.start), days[day])).sort((a, b) => a.start.localeCompare(b.start));
+  const upcoming = useMemo(() => sessions.filter((s) => !s.cancelled && new Date(s.start) > now).sort((a, b) => a.start.localeCompare(b.start)), [sessions, now]);
+  const nextFor = (classTypeId: string) => upcoming.find((s) => s.classTypeId === classTypeId && (counts.get(s.id) ?? 0) < s.capacity) ?? upcoming.find((s) => s.classTypeId === classTypeId);
+  return { now, sessions, counts, upcoming, nextFor };
+}
+
+export default function Landing() {
+  const lk = useLookups();
+  const week = useWeek();
+  const [reserve, setReserve] = useState<Session | null>(null);
+  const types = sortTypes(lk.classTypes.filter((c) => c.active));
+  return (
+    <div className="mx-auto max-w-[1240px] space-y-10 px-4 pt-6 pb-14 md:space-y-14 md:px-8 md:pt-10">
+      <FirstSheet types={types} week={week} onReserve={setReserve} />
+      <Programme types={types} week={week} onReserve={setReserve} />
+      <FirstClass />
+      <Appointments week={week} onReserve={setReserve} />
+      <Fees />
+      <Questions />
+      <Instructors />
+      <ReserveModal session={reserve} ct={reserve ? lk.classType.get(reserve.classTypeId) : undefined} ins={reserve ? lk.instructor.get(reserve.instructorId) : undefined} onClose={() => setReserve(null)} />
+    </div>
+  );
+}
+
+type Week = ReturnType<typeof useWeek>;
+
+function slotLabel(s: Session) {
+  return `${format(new Date(s.start), "EEE d MMM")} · ${format(new Date(s.start), "h:mm a")}`;
+}
+
+/* ───────────────────────── First viewport: the top of the sheet ───────────────────────── */
+function FirstSheet({ types, week, onReserve }: { types: ClassType[]; week: Week; onReserve: (s: Session) => void }) {
+  const settings = useSettings();
+  const router = useRouter();
+  const intro = useLiveQuery(() => db.plans.filter((p) => p.active && p.type === "intro").first(), []);
+  const [name, setName] = useState("");
+  const first3 = types.slice(0, 3);
+
+  const start = (e: FormEvent) => {
+    e.preventDefault();
+    const [first, ...rest] = name.trim().split(/\s+/);
+    const q = new URLSearchParams();
+    if (first) q.set("first", first);
+    if (rest.length) q.set("last", rest.join(" "));
+    router.push(`/join${q.toString() ? `?${q}` : ""}`);
+  };
 
   return (
-    <section id="timetable" className="scroll-mt-20 bg-surface-2 py-28 md:py-36">
-      <div className="mx-auto max-w-[1100px] px-5 md:px-10">
-        <Reveal className="text-center">
-          <div className="mb-4 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] text-muted"><span className="h-px w-10 bg-line-strong" /> Timetable <span className="h-px w-10 bg-line-strong" /></div>
-          <h2 className="font-display text-5xl font-light tracking-tight text-ink md:text-7xl">This week on the <em className="text-clay">mat.</em></h2>
-        </Reveal>
-        <Reveal delay={100} className="mt-12 flex snap-x gap-2 overflow-x-auto pb-2 [scrollbar-width:none] md:justify-center">
-          {days.map((d, i) => (
-            <button key={d.toISOString()} onClick={() => setDay(i)}
-              className={cn("flex min-w-[76px] snap-start flex-col items-center rounded-2xl border px-4 py-3 transition-all", i === day ? "border-forest bg-forest text-cream shadow-lg" : "border-line bg-surface text-ink-2 hover:border-line-strong")}>
-              <span className={cn("text-[11px] uppercase tracking-wider", i === day ? "text-cream/60" : "text-muted")}>{i === 0 ? "Today" : format(d, "EEE")}</span>
-              <span className="font-display text-2xl tnum">{format(d, "d")}</span>
-            </button>
+    <section aria-labelledby="sheet-title" className="relative bg-paper sheet-shadow">
+      {/* Printed form header */}
+      <div className="grid grid-cols-2 border-b-[1.5px] border-print text-[14px] md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        {[
+          ["Form", <span key="f" className="f-print font-bold text-print">Client programme · DP-1</span>],
+          ["Studio", <span key="s" className="text-print">{settings.studioName}</span>],
+          ["Date", <Hand key="d" className="text-[24px] leading-none">{format(week.now, "d MMMM yyyy")}</Hand>],
+          ["Instructor", <Hand key="i" className="text-[24px] leading-none">assigned at your first visit</Hand>],
+        ].map(([k, v], i) => (
+          <div key={k as string} className={cn("flex min-h-[64px] flex-col justify-between gap-1 px-4 py-2.5", i > 0 && "border-l border-rule max-md:[&:nth-child(3)]:border-l-0", i > 1 && "max-md:border-t")}>
+            <span className="f-narrow text-[11.5px] font-semibold uppercase tracking-[0.1em] text-form">{k}</span>
+            {v}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_330px]">
+        <div className="min-w-0 px-5 pt-8 pb-10 md:px-10 md:pt-12">
+          <MarkerText>
+            <h1 id="sheet-title" className="f-wide max-w-[14ch] text-balance text-[clamp(1.85rem,6.4vw,5.6rem)] font-black uppercase leading-[0.92] tracking-[-0.035em] text-print">
+              Your first <Mark type="highlight" color="#f8ec3a">Pilates</Mark> programme
+            </h1>
+          </MarkerText>
+          <p className="mt-6 max-w-[54ch] text-[19px] leading-relaxed text-print-2">
+            Never done Pilates? Good — this sheet is how every beginner starts here. Tell us about your body, take three small classes, and an instructor adjusts each one for you.
+            {intro && <> All three cost <strong className="font-bold text-print">{money(intro.price, { cents: false })}</strong>.</>}
+          </p>
+
+          <form onSubmit={start} className="mt-9 flex max-w-xl flex-col gap-5 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="prescribed-for">Prescribed for</Label>
+              <LineInput id="prescribed-for" hand value={name} onChange={(e) => setName(e.target.value)} placeholder="write your name" autoComplete="name" />
+            </div>
+            <HiliteButton type="submit" size="lg">Start my programme</HiliteButton>
+          </form>
+
+          <ol className="mt-12 border-t-2 border-print">
+            {first3.map((c, i) => {
+              const next = week.nextFor(c.id);
+              const taken = next ? week.counts.get(next.id) ?? 0 : 0;
+              return (
+                <li key={c.id} className="grid grid-cols-[2.2rem_1fr] items-center gap-x-4 gap-y-3 border-b border-rule py-5 sm:grid-cols-[2.2rem_120px_1fr_auto]">
+                  <span className="f-wide self-start pt-1 text-[22px] font-black text-print">{i + 1}.</span>
+                  <ExerciseFigure kind={c.category} className="hidden h-[74px] w-[120px] sm:block" />
+                  <div className="min-w-0">
+                    <div className="f-print text-[19px] font-bold text-print">{c.name}</div>
+                    <div className="f-narrow mt-0.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-form">{c.duration} min · {LEVEL_LABEL[c.level]} · max {c.defaultCapacity}</div>
+                  </div>
+                  <div className="col-start-2 sm:col-start-auto sm:text-right">
+                    {next ? (
+                      <button onClick={() => onReserve(next)} className="group text-left sm:text-right" aria-label={`Reserve ${c.name}, ${slotLabel(next)}`}>
+                        <div className="text-[15px] font-semibold text-print group-hover:text-ballpoint">{slotLabel(next)}</div>
+                        <div className="mt-1.5 flex items-center gap-2 sm:justify-end">
+                          <CapacityBoxes taken={taken} capacity={next.capacity} size={11} />
+                          <span className="text-[13px] text-muted">{Math.max(0, next.capacity - taken)} left</span>
+                        </div>
+                      </button>
+                    ) : <span className="text-[14px] text-muted">No class this week</span>}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="mt-5"><PenLink href="#programme">See the whole programme</PenLink></div>
+        </div>
+
+        {/* The margin, where the instructor writes */}
+        <aside className="relative border-t border-rule px-5 py-8 md:px-10 lg:border-t-0 lg:border-l-[1.5px] lg:border-l-[var(--stamp)]/40 lg:px-7 lg:py-12" aria-label="Instructor's notes">
+          <div className="flex items-start gap-3">
+            <Hand as="p" className="text-[30px] leading-[1.05]">{first3[0] ? <>new here? book<br />#1 first</> : "new here? start with the form"}</Hand>
+            <MarginArrow className="mt-6 hidden h-16 w-16 lg:block" d="M60 6 C 40 10, 22 26, 18 54 M18 54 l-7 -9 M18 54 l9 -6" />
+          </div>
+          {intro && (
+            <div className="mt-10 flex flex-col items-start gap-3">
+              <Stamp className="text-[22px]" rot={-7}>
+                <span className="text-[12px] tracking-[0.18em]">Intro offer</span>
+                <span className="text-[34px] tracking-[-0.01em]">{money(intro.price, { cents: false })}</span>
+                <span className="text-[12px] tracking-[0.14em]">{intro.credits} classes · {intro.validityDays} days</span>
+              </Stamp>
+              <p className="mt-3 text-[15px] text-print-2">For first-timers only. Pay at the front desk on your first visit.</p>
+            </div>
+          )}
+          <div className="mt-10 space-y-5">
+            <Hand as="p" className="text-[26px] leading-tight">bring grip socks + water</Hand>
+            <Hand as="p" className="text-[26px] leading-tight">tell us about any injury — we adapt everything</Hand>
+          </div>
+          {week.upcoming.length > 0 && (
+            <Hand as="p" className="mt-8 border-t border-rule pt-5 text-[26px] leading-tight">
+              {week.upcoming.length} classes on this week — plenty of beginner spots
+            </Hand>
+          )}
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────── The full programme ───────────────────────── */
+function Programme({ types, week, onReserve }: { types: ClassType[]; week: Week; onReserve: (s: Session) => void }) {
+  return (
+    <section id="programme" aria-labelledby="programme-title" className="scroll-mt-24 bg-paper px-5 py-10 sheet-shadow md:px-10 md:py-12">
+      <FormHeading id="programme-title" aside={<Hand className="hidden text-[24px] sm:inline">in the order we suggest</Hand>}>The programme</FormHeading>
+      <p className="mt-4 max-w-[62ch] text-[17px] text-print-2">Every format, numbered in the order most beginners take them. Each line shows the next real class on the timetable and how many places are left.</p>
+      <div className="mt-6 hidden grid-cols-[2.4rem_150px_1.4fr_1fr_1.1fr] gap-5 border-b-[1.5px] border-print pb-2 md:grid">
+        {["No.", "Exercise", "Class", "Prescription", "Next appointment"].map((h) => <span key={h} className="f-narrow text-[12px] font-semibold uppercase tracking-[0.1em] text-form">{h}</span>)}
+      </div>
+      <ol>
+        {types.map((c, i) => {
+          const next = week.nextFor(c.id);
+          const taken = next ? week.counts.get(next.id) ?? 0 : 0;
+          const note = c.category === "private" ? "good with an injury" : NOTE[c.level];
+          return (
+            <li key={c.id} className="grid grid-cols-[2.4rem_1fr] gap-x-5 gap-y-2 border-b border-rule py-6 md:grid-cols-[2.4rem_150px_1.4fr_1fr_1.1fr] md:items-center">
+              <span className="f-wide text-[22px] font-black text-print">{i + 1}.</span>
+              <ExerciseFigure kind={c.category} title={`${CATEGORY_LABEL[c.category]} exercise sketch`} className="col-start-2 h-[80px] w-[140px] md:col-start-auto" />
+              <div className="col-start-2 md:col-start-auto">
+                <div className="f-print text-[20px] font-bold text-print">{c.name}</div>
+                <p className="mt-1 max-w-[46ch] text-[15.5px] text-print-2">{c.description}</p>
+                {note && <Hand as="p" className="mt-1 text-[24px] leading-none">{note}</Hand>}
+              </div>
+              <dl className="col-start-2 grid grid-cols-3 gap-2 text-[15px] md:col-start-auto md:grid-cols-1 md:gap-1">
+                <div className="flex gap-2"><dt className="sr-only">Length</dt><dd className="text-print">{c.duration} min</dd></div>
+                <div className="flex gap-2"><dt className="sr-only">Level</dt><dd className="text-print">{LEVEL_LABEL[c.level]}</dd></div>
+                <div className="flex gap-2"><dt className="sr-only">Class size</dt><dd className="text-print">Max {c.defaultCapacity} people</dd></div>
+              </dl>
+              <div className="col-start-2 md:col-start-auto">
+                {next ? (
+                  <>
+                    <div className="text-[15.5px] font-semibold text-print">{slotLabel(next)}</div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <CapacityBoxes taken={taken} capacity={next.capacity} size={11} />
+                      <span className="text-[13px] text-muted">{Math.max(0, next.capacity - taken)} left</span>
+                    </div>
+                    <PenButton className="mt-2 text-[15px]" onClick={() => onReserve(next)}>{taken >= next.capacity ? "Join waitlist" : "Reserve"}</PenButton>
+                  </>
+                ) : <span className="text-[14px] text-muted">Not on this week&apos;s timetable</span>}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/* ───────────────────────── Before your first class (pink copy) ───────────────────────── */
+function FirstClass() {
+  const settings = useSettings();
+  const [bring, setBring] = useState<Record<string, boolean>>({});
+  const steps = [
+    { t: "Fill in your intake form", d: "Three minutes: goals, injuries, and anything your instructor should know. It goes straight to them.", href: "/join", cta: "Open the form" },
+    { t: "Take the intro offer", d: "Three classes over two weeks. Book them one at a time, whenever suits you.", href: "/shop#passes", cta: "See prices" },
+    { t: "Arrive 10 minutes early", d: "We show you the reformer, set your springs and your footbar, and answer questions." },
+    { t: "During class", d: "Small group, slow and controlled. Your instructor gives you options for anything that doesn't feel right." },
+    { t: "Afterwards", d: `Book your next class here or at the desk. Changed your mind? Cancel free up to ${settings.cancellationWindowHours} hours before.` },
+  ];
+  const items = [
+    ["socks", "Grip socks (we sell them at the desk)"],
+    ["water", "A water bottle"],
+    ["clothes", "Fitted, comfortable clothes — no zips"],
+    ["notes", "Your intake form done, or 5 spare minutes"],
+  ] as const;
+  return (
+    <section id="first-class" aria-labelledby="first-title" className="scroll-mt-24 bg-pink px-5 py-10 sheet-shadow md:px-10 md:py-12">
+      <FormHeading id="first-title" aside={<span className="f-narrow hidden text-[12px] font-semibold uppercase tracking-[0.1em] text-form sm:inline">Patient copy · keep this</span>}>Before your first class</FormHeading>
+      <div className="mt-8 grid gap-12 lg:grid-cols-[1.4fr_1fr]">
+        <ol className="space-y-7">
+          {steps.map((s, i) => (
+            <li key={s.t} className="grid grid-cols-[2.4rem_1fr] gap-4">
+              <span className="f-wide text-[22px] font-black text-print">{i + 1}.</span>
+              <div>
+                <div className="f-print text-[19px] font-bold text-print">{s.t}</div>
+                <p className="mt-1 max-w-[56ch] text-[16px] leading-relaxed text-print-2">{s.d}</p>
+                {s.href && <div className="mt-2"><PenLink href={s.href}>{s.cta}</PenLink></div>}
+              </div>
+            </li>
           ))}
-        </Reveal>
-        <div className="mt-10 overflow-hidden rounded-[1.75rem] border border-line bg-surface">
-          {list.length === 0 && <div className="px-6 py-16 text-center text-muted">No classes scheduled — the studio is resting.</div>}
-          <ul className="divide-y divide-line">
+        </ol>
+        <div>
+          <div className="border-t-2 border-print pt-3 lg:border-l lg:border-t-0 lg:border-l-print/20 lg:pt-0 lg:pl-10">
+            <div className="f-narrow border-b-[1.5px] border-print pb-2 text-[13px] font-bold uppercase tracking-[0.1em] text-print">Bring with you</div>
+            <ul className="mt-4 space-y-4">
+              {items.map(([k, label]) => (
+                <li key={k}><CheckBox checked={!!bring[k]} onChange={(v) => setBring((b) => ({ ...b, [k]: v }))}>{label}</CheckBox></li>
+              ))}
+            </ul>
+            <Hand as="p" className="mt-6 text-[24px] leading-tight">{Object.values(bring).filter(Boolean).length === items.length ? "perfect — see you on the reformer!" : "tick them off as you pack"}</Hand>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────── Appointment book ───────────────────────── */
+function Appointments({ week, onReserve }: { week: Week; onReserve: (s: Session) => void }) {
+  const lk = useLookups();
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(startOfDay(week.now), i)), [week.now]);
+  const [day, setDay] = useState(0);
+  const list = week.sessions.filter((s) => !s.cancelled && isSameDay(new Date(s.start), days[day])).sort((a, b) => a.start.localeCompare(b.start));
+  return (
+    <section id="appointments" aria-labelledby="appt-title" className="scroll-mt-24 bg-paper sheet-shadow">
+      <div className="px-5 pt-10 md:px-10 md:pt-12">
+        <FormHeading id="appt-title" aside={<span className="hidden text-[14px] text-muted sm:inline">Live from the studio timetable</span>}>Appointment book</FormHeading>
+      </div>
+      <div role="tablist" aria-label="Day" className="mt-6 flex overflow-x-auto border-b-[1.5px] border-print px-5 [scrollbar-width:none] md:px-10">
+        {days.map((d, i) => (
+          <button key={d.toISOString()} role="tab" aria-selected={i === day} onClick={() => setDay(i)}
+            className={cn("relative -mb-[1.5px] min-w-[84px] shrink-0 border-[1.5px] border-b-0 px-3 pt-2 pb-2.5 text-left transition-colors",
+              i === day ? "border-print bg-paper" : "border-transparent text-muted hover:text-print")}>
+            <span className="f-narrow block text-[12px] font-semibold uppercase tracking-[0.1em]">{i === 0 ? "Today" : format(d, "EEE")}</span>
+            <span className="f-wide block text-[22px] font-black leading-tight">{format(d, "d")}</span>
+            {i === day && <span className="absolute inset-x-0 -bottom-[1.5px] h-[1.5px] bg-paper" />}
+          </button>
+        ))}
+      </div>
+      <div className="px-5 pb-10 md:px-10">
+        {list.length === 0 ? (
+          <p className="py-14 text-center text-[16px] text-muted">No classes on this day. The studio is resting.</p>
+        ) : (
+          <ul>
             {list.map((s) => {
               const ct = lk.classType.get(s.classTypeId);
               const ins = lk.instructor.get(s.instructorId);
-              const n = counts.get(s.id) ?? 0;
-              const left = s.capacity - n;
-              const past = new Date(s.start) < now;
+              const taken = week.counts.get(s.id) ?? 0;
+              const left = Math.max(0, s.capacity - taken);
+              const past = new Date(s.start) < week.now;
               return (
-                <li key={s.id} className={cn("group grid grid-cols-[70px_1fr_auto] items-center gap-4 px-5 py-5 transition-colors hover:bg-surface-2 md:grid-cols-[110px_1fr_200px_160px_auto] md:px-8", past && "[&>*]:opacity-45")}>
-                  <div>
-                    <div className="font-display text-2xl text-ink tnum">{format(new Date(s.start), "h:mm")}</div>
-                    <div className="text-xs uppercase text-muted">{format(new Date(s.start), "a")} · {s.duration}m</div>
-                  </div>
+                <li key={s.id} className={cn("grid grid-cols-[4.6rem_1fr_auto] items-center gap-x-4 gap-y-2 border-b border-rule py-4 md:grid-cols-[6rem_1.3fr_1fr_1.3fr_8rem]", past && "[&_*]:text-muted")}>
+                  <div className="f-wide text-[20px] font-black text-print tnum">{format(new Date(s.start), "h:mm")}<span className="f-narrow ml-1 text-[12px] font-semibold uppercase text-form">{format(new Date(s.start), "a")}</span></div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2"><span className="size-2 shrink-0 rounded-full" style={{ background: ct?.color }} /><span className="truncate text-[17px] font-medium text-ink">{ct?.name}</span></div>
-                    <div className="mt-0.5 text-sm text-muted">{ct && LEVEL_LABEL[ct.level]} · {lk.room.get(s.roomId)?.name}<span className="md:hidden"> · {ins?.name}</span></div>
+                    <div className="f-print truncate text-[17px] font-bold text-print">{ct?.name}</div>
+                    <div className="text-[14px] text-muted">{s.duration} min · {ct && LEVEL_LABEL[ct.level]}<span className="md:hidden"> · {ins?.name}</span></div>
                   </div>
-                  <div className="hidden text-sm text-ink-2 md:block">{ins?.name}</div>
-                  <div className="hidden md:block">
-                    <div className="mb-1.5 text-xs text-muted">{left <= 0 ? "Full — join waitlist" : left <= 2 ? <span className="text-clay">Only {left} left</span> : `${left} spots left`}</div>
-                    <div className="h-1 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-forest" style={{ width: `${Math.min(100, (n / s.capacity) * 100)}%` }} /></div>
+                  <div className="hidden text-[15px] text-print-2 md:block">{ins?.name}<div className="text-[13px] text-muted">{lk.room.get(s.roomId)?.name}</div></div>
+                  <div className="col-span-2 col-start-2 flex items-center gap-2 md:col-span-1 md:col-start-auto">
+                    <CapacityBoxes taken={taken} capacity={s.capacity} size={11} />
+                    <span className={cn("text-[13px]", left <= 2 && left > 0 ? "font-semibold text-stamp" : "text-muted")}>{left === 0 ? "Full" : `${left} left`}</span>
                   </div>
-                  <button disabled={past} onClick={() => setReserve(s)}
-                    className={cn("inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition", past ? "border border-line text-muted" : left <= 0 ? "border border-line-strong text-ink-2 hover:border-ink" : "bg-forest text-cream hover:bg-forest-2", "disabled:pointer-events-none")}>
-                    {past ? "Done" : left <= 0 ? "Waitlist" : "Reserve"}
-                  </button>
+                  <div className="row-start-1 col-start-3 text-right md:row-start-auto md:col-start-auto">
+                    {past ? <span className="text-[14px] text-muted">Done</span> :
+                      <PenButton onClick={() => onReserve(s)} className="text-[15px]">{left === 0 ? "Waitlist" : "Reserve"}</PenButton>}
+                  </div>
                 </li>
               );
             })}
           </ul>
-        </div>
+        )}
+        <p className="mt-5 text-[14px] text-muted">Already a member? Reserve with the email you signed up with. New here? <PenLink href="/join" className="text-[14px]">Fill in the intake form</PenLink> first.</p>
       </div>
-      <ReserveModal session={reserve} ct={reserve ? lk.classType.get(reserve.classTypeId) : undefined} ins={reserve ? lk.instructor.get(reserve.instructorId) : undefined} onClose={() => setReserve(null)} />
     </section>
   );
 }
 
-/* ───────────────────────── Pricing teaser ───────────────────────── */
-function Pricing() {
+/* ───────────────────────── Fee schedule (canary copy) ───────────────────────── */
+function Fees() {
   const plans = useLiveQuery(() => db.plans.filter((p) => p.active).toArray(), []) ?? EMPTY;
   const { add, setOpen } = useCart();
   const toast = useToast();
-  const pick = [plans.find((p) => p.type === "intro"), plans.find((p) => p.popular), plans.find((p) => p.type === "unlimited")].filter(Boolean) as typeof plans;
+  const list = [...plans].sort((a, b) => (a.type === "intro" ? -1 : b.type === "intro" ? 1 : a.price - b.price));
   return (
-    <section className="mx-auto max-w-[1320px] px-5 py-28 md:px-10 md:py-40">
-      <div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <Reveal>
-          <div className="mb-4 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted"><span className="h-px w-10 bg-line-strong" /> Passes</div>
-          <h2 className="font-display text-5xl font-light tracking-tight text-ink md:text-7xl">Simple, honest <em className="text-clay">pricing.</em></h2>
-        </Reveal>
-        <Reveal delay={100}><Link href="/shop" className="inline-flex items-center gap-2 text-[15px] font-medium text-ink underline-offset-4 hover:underline">Compare every pass <ArrowRight className="size-4" /></Link></Reveal>
-      </div>
-      <div className="grid gap-5 md:grid-cols-3">
-        {pick.map((p, i) => {
-          const hero = !!p.popular;
-          return (
-            <Reveal key={p.id} delay={i * 110}>
-              <article className={cn("group relative flex h-full flex-col rounded-[2rem] border p-8 transition-transform duration-500 hover:-translate-y-1.5", hero ? "border-forest bg-forest text-cream shadow-[0_30px_60px_-30px_rgb(29_47_39/.6)]" : "border-line bg-surface")}>
-                {hero && <span className="absolute -top-3 left-8 inline-flex items-center gap-1 rounded-full bg-clay px-3 py-1 text-xs font-medium text-white"><Sparkles className="size-3" /> Most loved</span>}
-                {p.type === "intro" && <span className="absolute -top-3 left-8 rounded-full bg-moss px-3 py-1 text-xs font-medium text-forest">New clients</span>}
-                <h3 className="font-display text-2xl">{p.name}</h3>
-                <p className={cn("mt-2 min-h-[48px] text-sm", hero ? "text-cream/70" : "text-muted")}>{p.description}</p>
-                <div className="mt-8 font-display text-6xl font-light tnum">{money(p.price, { cents: false })}</div>
-                <div className={cn("mt-1 text-sm", hero ? "text-cream/60" : "text-muted")}>
-                  {p.credits == null ? `Unlimited classes · ${p.validityDays} days` : `${money(p.price / p.credits)} per class · valid ${p.validityDays} days`}
-                </div>
-                <button onClick={() => { add({ kind: "plan", id: p.id }); toast.success(`${p.name} added to your bag`); setOpen(true); }}
-                  className={cn("mt-10 inline-flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-medium transition", hero ? "bg-cream text-forest hover:bg-white" : "bg-forest text-cream hover:bg-forest-2")}>
-                  <Plus className="size-4" /> Add to bag
-                </button>
-              </article>
-            </Reveal>
-          );
-        })}
+    <section id="fees" aria-labelledby="fees-title" className="scroll-mt-24 bg-canary px-5 py-10 sheet-shadow md:px-10 md:py-12">
+      <FormHeading id="fees-title" aside={<span className="f-narrow hidden text-[12px] font-semibold uppercase tracking-[0.1em] text-form sm:inline">Customer copy</span>}>Fee schedule</FormHeading>
+      <ul className="mt-6">
+        {list.map((p) => (
+          <li key={p.id} className="grid grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-1 border-b border-print/15 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+            <div className="flex min-w-0 items-baseline gap-3">
+              <span className="f-print shrink-0 text-[18px] font-bold text-print">{p.name}</span>
+              <span className="hidden flex-1 translate-y-[-4px] border-b-2 border-dotted border-print/35 sm:block" aria-hidden />
+            </div>
+            <span className="f-wide text-right text-[22px] font-black text-print tnum">{money(p.price, { cents: false })}</span>
+            <PenButton className="col-span-2 justify-self-start text-[15px] sm:col-span-1 sm:justify-self-end" onClick={() => { add({ kind: "plan", id: p.id }); toast.success(`${p.name} added to your order`); setOpen(true); }}>Add to order</PenButton>
+            <span className="col-span-2 text-[14px] text-print-2 sm:col-span-3">
+              {p.credits == null ? "Unlimited group classes" : `${p.credits} ${p.privateOnly ? "private session" : "class"}${p.credits > 1 ? "es" : ""}${p.credits > 1 ? ` · ${money(p.price / p.credits)} each` : ""}`} · valid {p.validityDays} days
+              {p.type === "intro" && <Hand className="ml-2 text-[22px]">← new clients</Hand>}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 flex flex-wrap items-center gap-6">
+        <HiliteLink href="/shop">Open the order form</HiliteLink>
+        <span className="text-[14px] text-print-2">Pay at the studio. No card details online.</span>
       </div>
     </section>
   );
 }
 
-/* ───────────────────────── Voices ───────────────────────── */
-function Voices() {
-  const Card = ({ t }: { t: (typeof TESTIMONIALS)[number] }) => (
-    <figure className="mx-2.5 w-[340px] shrink-0 rounded-[1.5rem] border border-line bg-surface p-6 md:w-[400px]">
-      <blockquote className="font-display text-xl leading-snug text-ink">“{t.q}”</blockquote>
-      <figcaption className="mt-4 text-sm text-muted">— {t.n}</figcaption>
-    </figure>
-  );
-  return (
-    <section className="space-y-5 overflow-hidden pb-28 md:pb-40">
-      <Marquee duration={60}>{TESTIMONIALS.slice(0, 3).concat(TESTIMONIALS.slice(3)).map((t) => <Card key={t.n} t={t} />)}</Marquee>
-      <Marquee duration={70} reverse>{[...TESTIMONIALS].reverse().map((t) => <Card key={t.n} t={t} />)}</Marquee>
-    </section>
-  );
-}
-
-/* ───────────────────────── First visit CTA ───────────────────────── */
-function FirstVisit() {
-  const steps = [
-    { icon: <Users className="size-5" />, t: "Tell us about you", d: "A 3-minute intake form: goals, injuries and how you like to move." },
-    { icon: <Sparkles className="size-5" />, t: "Pick the intro offer", d: "Three classes over two weeks — the gentlest way in." },
-    { icon: <Clock className="size-5" />, t: "Arrive 10 minutes early", d: "We'll show you the reformer, set your springs and get you comfortable." },
+/* ───────────────────────── Questions beginners ask ───────────────────────── */
+function Questions() {
+  const settings = useSettings();
+  const lk = useLookups();
+  const maxReformer = Math.max(0, ...lk.classTypes.filter((c) => c.category === "reformer").map((c) => c.defaultCapacity));
+  const items = [
+    { id: 1, title: "Am I fit enough to start?", content: "Yes. Beginner classes assume you have never done Pilates. Springs make the reformer lighter or heavier, so the same class works for very different bodies." },
+    { id: 2, title: "What should I wear?", content: "Fitted clothes you can move in, without zips or buckles that catch on the equipment. Grip socks are required on the reformer; we sell them at the desk." },
+    { id: 3, title: "I have an injury or back pain. Can I come?", content: "Often, yes — many people start Pilates for exactly that. Mark it on the intake form's body map. Your instructor adapts exercises, and for some conditions we may ask for a note from your doctor first." },
+    { id: 4, title: "Is it safe during or after pregnancy?", content: "Tell us on the intake form. We adjust positions and intensity, and a private session is a good first step if you're unsure." },
+    { id: 5, title: "How big are the classes?", content: maxReformer ? `Reformer classes are capped at ${maxReformer} people, so the instructor can correct each person.` : "Small. The instructor can correct each person." },
+    { id: 6, title: "What if I need to cancel?", content: `Cancel free up to ${settings.cancellationWindowHours} hours before class. Later than that, the class credit is used.` },
   ];
   return (
-    <section className="mx-auto max-w-[1320px] px-5 pb-28 md:px-10 md:pb-40">
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-[#c0663f] p-8 text-cream grain md:p-16">
-        <div className="pointer-events-none absolute -right-24 -top-24 w-[520px] opacity-80 max-md:hidden"><BreathingOrb labels={false} /></div>
-        <div className="relative z-10 max-w-2xl">
-          <div className="mb-4 text-xs uppercase tracking-[0.2em] text-cream/70">Your first visit</div>
-          <h2 className="font-display text-5xl font-light leading-[1.02] tracking-tight md:text-7xl">It all starts with <em>three minutes.</em></h2>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {steps.map((s, i) => (
-              <Reveal key={s.t} delay={i * 120}>
-                <div className="mb-3 grid size-11 place-items-center rounded-full bg-cream/15">{s.icon}</div>
-                <div className="font-medium">{s.t}</div>
-                <p className="mt-1 text-sm text-cream/75">{s.d}</p>
-              </Reveal>
-            ))}
-          </div>
-          <Link href="/join" className="group mt-12 inline-flex h-14 items-center gap-3 rounded-full bg-cream pl-7 pr-2 text-[15px] font-medium text-[#8c4527] transition hover:bg-white">
-            Start your intake form
-            <span className="grid size-10 place-items-center rounded-full bg-[#c0663f] text-cream transition-transform duration-500 group-hover:translate-x-1"><ArrowDown className="size-4 -rotate-90" /></span>
-          </Link>
+    <section aria-labelledby="faq-title" className="grid gap-10 bg-paper px-5 py-10 sheet-shadow md:px-10 md:py-12 lg:grid-cols-[1fr_1.35fr]">
+      <div>
+        <FormHeading id="faq-title">Questions beginners ask</FormHeading>
+        <div className="mt-6 flex items-start gap-2">
+          <Hand as="p" className="text-[28px] leading-tight">ask us anything at the desk — no question is silly</Hand>
+          <SquigglyArrow width={90} height={45} className="mt-4 hidden shrink-0 text-ballpoint lg:block" variant="smooth" strokeWidth={2} />
         </div>
       </div>
+      <AccordionApp items={items} defaultOpen={1} />
+    </section>
+  );
+}
+
+/* ───────────────────────── Instructors ───────────────────────── */
+function Instructors() {
+  const lk = useLookups();
+  const active = lk.instructors.filter((i) => i.active);
+  return (
+    <section aria-labelledby="team-title" className="bg-paper px-5 py-10 sheet-shadow md:px-10 md:py-12">
+      <FormHeading id="team-title">Your instructors</FormHeading>
+      <ul className="mt-2 grid sm:grid-cols-2 lg:grid-cols-3">
+        {active.map((ins) => (
+          <li key={ins.id} className="border-b border-rule py-6 sm:pr-8">
+            <Hand as="p" className="text-[34px] leading-none" aria-hidden>{ins.name}</Hand>
+            <div className="mt-1 border-t border-print pt-1.5">
+              <p className="f-print text-[17px] font-bold text-print">{ins.name}</p>
+              <span className="f-narrow text-[12px] font-semibold uppercase tracking-[0.1em] text-form">{ins.specialties.map((s) => CATEGORY_LABEL[s]).join(" · ")}</span>
+            </div>
+            {ins.bio && <p className="mt-3 max-w-[40ch] text-[15.5px] text-print-2">{ins.bio}</p>}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

@@ -1,70 +1,85 @@
 "use client";
+import { useId } from "react";
 import { cn } from "@/lib/utils";
+import { Tick } from "./paper";
 
 export const BODY_AREAS = ["Neck", "Shoulders", "Upper back", "Lower back", "Wrists", "Hips", "Knees", "Ankles & feet"] as const;
+type Area = (typeof BODY_AREAS)[number];
 
-const SPOTS: Record<(typeof BODY_AREAS)[number], [number, number][]> = {
-  Neck: [[100, 70]],
-  Shoulders: [[66, 90], [134, 90]],
-  "Upper back": [[100, 112]],
-  "Lower back": [[100, 168]],
-  Wrists: [[45, 198], [155, 198]],
-  Hips: [[80, 206], [120, 206]],
-  Knees: [[86, 300], [114, 300]],
-  "Ankles & feet": [[87, 390], [113, 390]],
+/* Where each area sits on the front (F) and back (B) outlines, in a 120 × 260 view. */
+const SPOTS: Record<Area, { view: "F" | "B"; x: number; y: number; r: number }[]> = {
+  Neck: [{ view: "F", x: 60, y: 44, r: 9 }, { view: "B", x: 60, y: 44, r: 9 }],
+  Shoulders: [{ view: "F", x: 36, y: 58, r: 11 }, { view: "F", x: 84, y: 58, r: 11 }],
+  "Upper back": [{ view: "B", x: 60, y: 76, r: 17 }],
+  "Lower back": [{ view: "B", x: 60, y: 114, r: 15 }],
+  Wrists: [{ view: "F", x: 20, y: 132, r: 8 }, { view: "F", x: 100, y: 132, r: 8 }],
+  Hips: [{ view: "F", x: 46, y: 132, r: 11 }, { view: "F", x: 74, y: 132, r: 11 }],
+  Knees: [{ view: "F", x: 47, y: 186, r: 10 }, { view: "F", x: 73, y: 186, r: 10 }],
+  "Ankles & feet": [{ view: "F", x: 47, y: 240, r: 9 }, { view: "F", x: 73, y: 240, r: 9 }],
 };
 
-/** Tap the body to flag sensitive areas. Chips mirror the map for keyboard and screen-reader users. */
-export function BodyMap({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const toggle = (a: string) => onChange(value.includes(a) ? value.filter((x) => x !== a) : [...value, a]);
+/** A clinic body-chart outline. */
+const OUTLINE = "M60 10 c9 0 15 7 15 17 c0 9 -5 16 -10 18 v6 c11 2 22 5 27 11 c5 6 6 22 8 40 l4 32 c1 5 -6 6 -7 1 l-7 -30 l-4 -18 l-2 26 c-1 12 2 22 1 34 l-3 46 l2 30 c1 6 -9 6 -10 0 l-5 -60 l-3 -40 h-4 l-3 40 l-5 60 c-1 6 -11 6 -10 0 l2 -30 l-3 -46 c-1 -12 2 -22 1 -34 l-2 -26 l-4 18 l-7 30 c-1 5 -8 4 -7 -1 l4 -32 c2 -18 3 -34 8 -40 c5 -6 16 -9 27 -11 v-6 c-5 -2 -10 -9 -10 -18 c0 -10 6 -17 15 -17 z";
+
+function Figure({ view, value, onToggle, hatch }: { view: "F" | "B"; value: string[]; onToggle: (a: Area) => void; hatch: string }) {
   return (
-    <div className="grid items-center gap-8 sm:grid-cols-[220px_1fr]">
-      <svg viewBox="0 0 200 420" className="mx-auto w-[200px] select-none" role="img" aria-label="Body map">
-        <defs>
-          <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#dfe8e0" />
-            <stop offset="1" stopColor="#cfdccf" />
-          </linearGradient>
-        </defs>
-        <g fill="url(#skin)" stroke="#8fae94" strokeWidth="1.5">
-          <circle cx="100" cy="38" r="21" />
-          <path d="M92 56 h16 v14 h-16z" />
-          <path d="M68 80 Q100 70 132 80 L140 150 Q134 188 126 212 L74 212 Q66 188 60 150 Z" />
-        </g>
-        <g fill="none" stroke="#cfdccf" strokeLinecap="round">
-          <path d="M66 86 Q50 140 45 198" strokeWidth="17" />
-          <path d="M134 86 Q150 140 155 198" strokeWidth="17" />
-          <path d="M87 210 L85 300 L87 392" strokeWidth="22" />
-          <path d="M113 210 L115 300 L113 392" strokeWidth="22" />
-        </g>
-        <g fill="none" stroke="#8fae94" strokeWidth="1" opacity=".6">
-          <path d="M66 86 Q50 140 45 198" /><path d="M134 86 Q150 140 155 198" />
-          <path d="M87 210 L85 300 L87 392" /><path d="M113 210 L115 300 L113 392" />
-        </g>
-        {BODY_AREAS.map((a) => SPOTS[a].map(([x, y], i) => {
+    <figure className="flex flex-col items-center">
+      <svg viewBox="0 0 120 262" className="h-[300px] w-auto select-none" aria-hidden>
+        <path d={OUTLINE} fill="var(--paper)" stroke="var(--form)" strokeWidth="1.4" />
+        {view === "B" && <path d="M60 52 V150" stroke="var(--rule-strong)" strokeWidth="1" strokeDasharray="3 3" />}
+        {BODY_AREAS.flatMap((a) => SPOTS[a].filter((s) => s.view === view).map((s, i) => {
           const on = value.includes(a);
           return (
-            <g key={a + i} onClick={() => toggle(a)} className="cursor-pointer" aria-hidden>
-              {on && <circle cx={x} cy={y} r="9" fill="#c0663f" style={{ transformOrigin: `${x}px ${y}px`, animation: "ripple 1.8s ease-out infinite" }} />}
-              <circle cx={x} cy={y} r="14" fill="transparent" />
-              <circle cx={x} cy={y} r={on ? 8 : 6} fill={on ? "#c0663f" : "#fffcf7"} stroke={on ? "#fffcf7" : "#2e4a3e"} strokeWidth="2" className="transition-all" />
+            <g key={a + i} onClick={() => onToggle(a)} className="cursor-pointer">
+              <circle cx={s.x} cy={s.y} r={s.r + 4} fill="transparent" />
+              {on ? (
+                <>
+                  <circle cx={s.x} cy={s.y} r={s.r} fill={`url(#${hatch})`} />
+                  <path d={`M${s.x - s.r - 2} ${s.y + 1} C ${s.x - s.r} ${s.y - s.r - 3}, ${s.x + s.r + 3} ${s.y - s.r - 2}, ${s.x + s.r + 1} ${s.y} C ${s.x + s.r} ${s.y + s.r + 3}, ${s.x - s.r - 2} ${s.y + s.r + 2}, ${s.x - s.r + 2} ${s.y - 3}`}
+                    fill="none" stroke="var(--ballpoint)" strokeWidth="1.6" strokeLinecap="round" />
+                </>
+              ) : (
+                <circle cx={s.x} cy={s.y} r={3} fill="var(--rule-strong)" />
+              )}
             </g>
           );
         }))}
       </svg>
-      <div>
-        <div className="mb-3 text-sm text-muted">Tap the body or the chips below. Leave blank if nothing bothers you.</div>
-        <div className="flex flex-wrap gap-2">
-          {BODY_AREAS.map((a) => {
-            const on = value.includes(a);
-            return (
-              <button key={a} type="button" onClick={() => toggle(a)} aria-pressed={on}
-                className={cn("h-10 rounded-full border px-4 text-sm font-medium transition", on ? "border-clay bg-clay text-white" : "border-line bg-surface text-ink-2 hover:border-line-strong")}>
-                {a}
-              </button>
-            );
-          })}
-        </div>
+      <figcaption className="f-narrow mt-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-form">{view === "F" ? "Front" : "Back"}</figcaption>
+    </figure>
+  );
+}
+
+/**
+ * Shade the areas that hurt, the way you would on a physio's body chart.
+ * The chips below mirror the chart for keyboard and screen-reader use.
+ */
+export function BodyMap({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const hatch = `hatch-${useId().replace(/:/g, "")}`;
+  const toggle = (a: string) => onChange(value.includes(a) ? value.filter((x) => x !== a) : [...value, a]);
+  return (
+    <div>
+      <svg width="0" height="0" className="absolute" aria-hidden>
+        <defs>
+          <pattern id={hatch} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+            <path d="M0 0 V4" stroke="var(--ballpoint)" strokeWidth="1.3" />
+          </pattern>
+        </defs>
+      </svg>
+      <div className="flex justify-center gap-6 sm:justify-start sm:gap-10">
+        <Figure view="F" value={value} onToggle={toggle} hatch={hatch} />
+        <Figure view="B" value={value} onToggle={toggle} hatch={hatch} />
+      </div>
+      <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3" role="group" aria-label="Sensitive areas">
+        {BODY_AREAS.map((a) => {
+          const on = value.includes(a);
+          return (
+            <button key={a} type="button" onClick={() => toggle(a)} aria-pressed={on}
+              className={cn("inline-flex items-center gap-1 text-[16px] transition-colors", on ? "font-semibold text-ballpoint underline decoration-ballpoint decoration-2 underline-offset-[5px]" : "text-print-2 hover:text-print")}>
+              {on && <Tick className="size-4" />}{a}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

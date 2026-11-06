@@ -3,7 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import {
   CalendarDays, CalendarPlus, ChartColumn, Command, CreditCard, Download, Ellipsis, LayoutDashboard, Layers, Monitor,
   Moon, PanelLeft, PanelLeftClose, Search, Settings, Sun, Ticket, UserCheck, UserPlus, Users, Wallet, Wifi, WifiOff,
-  Wrench, GraduationCap, ArrowRight,
+  Wrench, GraduationCap, ArrowRight, Store,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { useOnline, useSettings } from "@/lib/hooks";
 import { seedDemo } from "@/lib/seed";
 import { cn, fullName, setMoneyFormat, EMPTY } from "@/lib/utils";
 import { OverlayProvider, Sheet } from "./overlay";
+import { ViewSwitch } from "./view-switch";
 import { Avatar, Kbd } from "./ui";
 
 /* ───────── Theme ───────── */
@@ -73,7 +74,7 @@ function PwaProvider({ children }: { children: ReactNode }) {
 }
 
 /* ───────── Data bootstrap ───────── */
-function DataGate({ children }: { children: ReactNode }) {
+function DataGate({ children, splash }: { children: ReactNode; splash?: ReactNode }) {
   const [ready, setReady] = useState(false);
   const settings = useSettings();
   useEffect(() => {
@@ -88,7 +89,7 @@ function DataGate({ children }: { children: ReactNode }) {
     })();
   }, []);
   setMoneyFormat(settings.currency, settings.locale);
-  if (!ready) return <Splash />;
+  if (!ready) return <>{splash ?? <Splash />}</>;
   return <>{children}</>;
 }
 
@@ -189,6 +190,10 @@ function Sidebar({ collapsed, setCollapsed, openPalette }: { collapsed: boolean;
         </button>
       </div>
 
+      <div className={cn("px-4 pb-3", collapsed && "px-3")}>
+        <ViewSwitch current="staff" tone="app" compact={collapsed} className={collapsed ? "flex-col" : undefined} />
+      </div>
+
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
         {NAV.map((g) => (
           <div key={g.group}>
@@ -274,6 +279,9 @@ function MobileNav({ openPalette }: { openPalette: () => void }) {
         <Logo size={30} />
         <div className="min-w-0 flex-1 truncate font-display text-[16px] text-ink">{settings.studioName}</div>
         {!online && <span className="inline-flex items-center gap-1 rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-medium text-warn"><WifiOff className="size-3" /> Offline</span>}
+        <Link href="/" className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-line px-2.5 text-[12.5px] font-medium text-ink-2 hover:bg-bg-elev" aria-label="Switch to client site">
+          <Store className="size-4" /> Client
+        </Link>
         <button onClick={openPalette} className="grid size-9 place-items-center rounded-xl text-ink-2 hover:bg-bg-elev" aria-label="Search"><Search className="size-[18px]" /></button>
       </header>
 
@@ -406,18 +414,30 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
 }
 
 /* ───────── Public site providers (no admin chrome) ───────── */
-export function SiteProviders({ children }: { children: ReactNode }) {
+export function SiteProviders({ children, bodyClass = "" }: { children: ReactNode; bodyClass?: string }) {
   useEffect(() => {
+    // The public site has its own fixed paper palette and fonts; apply them to <body>
+    // so portalled dialogs, sheets and toasts pick them up too.
+    const classes = ["site", ...bodyClass.split(/\s+/).filter(Boolean)];
     document.documentElement.classList.remove("dark");
-    document.body.classList.add("site");
-    return () => document.body.classList.remove("site");
-  }, []);
+    document.body.classList.add(...classes);
+    return () => document.body.classList.remove(...classes);
+  }, [bodyClass]);
   return (
     <PwaProvider>
       <OverlayProvider>
-        <DataGate>{children}</DataGate>
+        <DataGate splash={<PaperSplash />}>{children}</DataGate>
       </OverlayProvider>
     </PwaProvider>
+  );
+}
+
+/** First-load state for the public site: a blank sheet, no spinner. */
+function PaperSplash() {
+  return (
+    <div className="mx-auto grid min-h-[70dvh] max-w-[1240px] place-items-center px-4">
+      <p className="f-narrow text-[14px] font-semibold uppercase tracking-[0.12em] text-form" role="status">Opening the timetable…</p>
+    </div>
   );
 }
 

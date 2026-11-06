@@ -18,7 +18,8 @@ export function SignaturePad({ value, onChange }: { value?: string; onChange: (d
     ctx.scale(dpr, dpr);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.strokeStyle = "#1b221e";
+    // Ballpoint ink, read from the site token so the pad follows the palette.
+    ctx.strokeStyle = getComputedStyle(c).getPropertyValue("--ballpoint").trim() || "#2340b0";
     if (value) {
       const img = new Image();
       img.onload = () => ctx.drawImage(img, 0, 0, r.width, r.height);
@@ -64,16 +65,19 @@ export function SignaturePad({ value, onChange }: { value?: string; onChange: (d
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+    <div className="relative overflow-hidden border-[1.5px] border-print bg-paper">
       <canvas
         ref={canvas}
         className="block h-40 w-full touch-none cursor-crosshair"
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}
         aria-label="Signature area — draw your signature"
       />
-      <div className="pointer-events-none absolute inset-x-6 bottom-9 border-b border-dashed border-line-strong" />
-      {empty && <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-sm text-faint"><PenLine className="size-4" /> Sign here with your finger or mouse</div>}
-      <button type="button" onClick={clear} className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-bg-elev px-2.5 py-1 text-xs text-muted hover:text-ink">
+      <div className="pointer-events-none absolute inset-x-6 bottom-9 flex items-end gap-2" aria-hidden>
+        <span className="f-wide text-[20px] font-black leading-none text-form">X</span>
+        <span className="mb-1 flex-1 border-b-[1.5px] border-form" />
+      </div>
+      {empty && <div className="pointer-events-none absolute inset-x-0 top-6 flex items-center justify-center gap-2 text-[15px] text-muted"><PenLine className="size-4" /> Sign with your finger or mouse</div>}
+      <button type="button" onClick={clear} className="f-narrow absolute right-3 top-3 inline-flex items-center gap-1 px-2 py-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-form hover:text-ballpoint">
         <Eraser className="size-3.5" /> Clear
       </button>
     </div>

@@ -39,6 +39,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
         <div
           role="dialog"
           aria-modal="true"
+          data-modal=""
           className={cn("relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl border border-line bg-surface shadow-lg animate-pop sm:rounded-3xl", w)}
         >
           <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
@@ -49,7 +50,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close"><X /></Button>
           </div>
           <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-          {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-6 py-4 rounded-b-3xl">{footer}</div>}
+          {footer && <div data-modal-footer="" className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-6 py-4 rounded-b-3xl">{footer}</div>}
         </div>
       </div>
     </Portal>
@@ -137,9 +138,9 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
           <div className="text-sm leading-relaxed text-ink-2">{confirm?.message}</div>
         </Modal>
         <Portal>
-          <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[70] flex flex-col items-center gap-2 px-4 md:bottom-6 md:items-end md:pr-6" aria-live="polite">
+          <div data-toast-region="" className="pointer-events-none fixed inset-x-0 bottom-20 z-[70] flex flex-col items-center gap-2 px-4 md:bottom-6 md:items-end md:pr-6" aria-live="polite">
             {toasts.map((t) => (
-              <div key={t.id} className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-lg animate-rise">
+              <div key={t.id} data-toast="" className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-lg animate-rise">
                 <span className="mt-0.5">{icons[t.tone]}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium text-ink">{t.title}</div>

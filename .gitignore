@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# impeccable: local evidence, caches and the platform binary (re-downloaded on first run)
+/.impeccable/review/
+/.impeccable/hook.cache.json
+/.claude/skills/impeccable/scripts/bin/
+/.claude/settings.local.json
